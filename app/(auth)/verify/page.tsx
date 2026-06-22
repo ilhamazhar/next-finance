@@ -30,6 +30,12 @@ function VerifyView() {
   const [state, setState] = useState<VerifyState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Which path triggered the current verify: an explicit email-link click
+  // ("link") vs the silent post-login auto-verify off the resend's dev token
+  // ("resend"). Only "link" failures take over the screen with an error — a
+  // failed post-login auto-verify isn't actionable (a fresh email was just sent).
+  const verifyTrigger = useRef<"link" | "resend">("link");
+
   const verify = useMutation({
     mutationFn: async (tk: string) => {
       const res = await axios.get<ApiEnvelope<unknown>>(
@@ -44,8 +50,10 @@ function VerifyView() {
       return res.data;
     },
     onMutate: () => {
-      setState("verifying");
       setErrorMsg(null);
+      // Only take over the screen with the spinner for a deliberate link click.
+      // The post-login auto-verify runs quietly behind "Check your email".
+      if (verifyTrigger.current === "link") setState("verifying");
     },
     onSuccess: () => {
       useBackendStatus.getState().setStatus("up");
@@ -53,19 +61,27 @@ function VerifyView() {
       toast.success("Email verified — you can sign in now");
     },
     onError: (err: unknown) => {
-      setState("error");
       if (axios.isAxiosError(err) && (err.response?.status === 503 || !err.response)) {
         useBackendStatus.getState().setStatus("down");
         const msg = "Cannot reach the server. Please try again shortly.";
-        setErrorMsg(msg);
+        // The global offline banner already covers this; only hijack the screen
+        // for a deliberate link click.
+        if (verifyTrigger.current === "link") {
+          setState("error");
+          setErrorMsg(msg);
+        }
         toast.error(msg);
         return;
       }
+      // A post-login auto-verify failing is not actionable — a fresh email was
+      // just sent. Stay on "Check your email" instead of an alarming red error.
+      if (verifyTrigger.current === "resend") return;
       const msg = axios.isAxiosError(err)
         ? err.response?.data?.message ?? "Verification failed"
         : err instanceof Error
           ? err.message
           : "Verification failed";
+      setState("error");
       setErrorMsg(msg);
       toast.error(msg);
     },
@@ -85,8 +101,12 @@ function VerifyView() {
       // Privacy: backend returns 200 with a generic message even if email doesn't exist.
       toast.success(res.message ?? "Verification email sent");
       // Dev mode: token comes back inline — verify immediately (no manual paste UI).
+      // Marked "resend" so a failure here stays quiet (see verify.onError).
       const devToken = res.data?.verification_token;
-      if (devToken) verify.mutate(devToken);
+      if (devToken) {
+        verifyTrigger.current = "resend";
+        verify.mutate(devToken);
+      }
     },
     onError: (err: unknown) => {
       if (axios.isAxiosError(err) && (err.response?.status === 503 || !err.response)) {
@@ -108,6 +128,7 @@ function VerifyView() {
   useEffect(() => {
     if (tokenFromUrl && autoVerifiedToken.current !== tokenFromUrl) {
       autoVerifiedToken.current = tokenFromUrl;
+      verifyTrigger.current = "link";
       verify.mutate(tokenFromUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
