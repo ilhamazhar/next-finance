@@ -83,24 +83,15 @@ function ResetPasswordView() {
       <CardHeader className="items-center text-center">
         <KeyRound className="h-10 w-10 text-[color:var(--color-primary)]" />
         <CardTitle>Reset password</CardTitle>
-        <CardDescription>Enter your reset token and a new password.</CardDescription>
+        <CardDescription>Enter a new password for your account.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="token">Reset token</Label>
-            <Input
-              id="token"
-              placeholder="Paste the token from your email"
-              {...form.register("token")}
-            />
-            <p className="text-xs text-[color:var(--color-muted-foreground)]">
-              The link in your email already includes the token. Pasting here is a fallback.
-            </p>
-            {form.formState.errors.token && (
-              <p className="text-xs text-red-600">{form.formState.errors.token.message}</p>
-            )}
-          </div>
+          {/* Token comes from the email link; submitted as a hidden field. */}
+          <input type="hidden" {...form.register("token")} />
+          {form.formState.errors.token && (
+            <p className="text-xs text-red-600">{form.formState.errors.token.message}</p>
+          )}
           <div className="space-y-2">
             <Label htmlFor="new_password">New password</Label>
             <Input

@@ -157,7 +157,7 @@ export default function FinancingDetailPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              disabled={pay.isPending}
+                              disabled={pay.isPending && pay.variables === inst.installment_no}
                               onClick={() => pay.mutate(inst.installment_no)}
                             >
                               {pay.isPending && pay.variables === inst.installment_no ? "…" : "Pay"}

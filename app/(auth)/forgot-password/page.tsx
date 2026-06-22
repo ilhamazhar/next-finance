@@ -65,6 +65,9 @@ export default function ForgotPasswordPage() {
   });
 
   if (sentTo) {
+    // The reset token only arrives via the emailed link. In dev the backend
+    // returns it inline, so we can offer a direct shortcut; otherwise there's
+    // no token to carry and the button would dead-end on the reset page.
     const query = new URLSearchParams({ email: sentTo });
     if (devToken) query.set("token", devToken);
 
@@ -75,16 +78,18 @@ export default function ForgotPasswordPage() {
           <CardTitle>Check your email</CardTitle>
           <CardDescription>
             If an account exists for <span className="font-medium">{sentTo}</span>, we&apos;ve sent
-            a password reset link.
+            a password reset link. Open it to choose a new password.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            className="w-full"
-            onClick={() => router.push(`/reset-password?${query.toString()}`)}
-          >
-            Enter reset token
-          </Button>
+          {devToken && (
+            <Button
+              className="w-full"
+              onClick={() => router.push(`/reset-password?${query.toString()}`)}
+            >
+              Continue to reset password
+            </Button>
+          )}
           <p className="text-sm text-center text-[color:var(--color-muted-foreground)]">
             <Link href="/login" className="underline">
               Back to sign in

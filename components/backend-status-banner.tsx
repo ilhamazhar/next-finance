@@ -30,7 +30,9 @@ export function BackendStatusBanner() {
   });
 
   useEffect(() => {
-    if (status === "down" && data?.status === "up") setStatus("up");
+    // Any non-"down" health result means the backend is reachable again — clear
+    // the banner. "degraded" (reachable but unhealthy) still counts as reachable.
+    if (status === "down" && data && data.status !== "down") setStatus("up");
   }, [status, data, setStatus]);
 
   if (status === "up") return null;

@@ -102,11 +102,14 @@ function VerifyView() {
   });
 
   // Auto-verify when the page loads with a token in the URL (email-link click).
+  // Ref-guarded so it fires once per token — StrictMode's double-mount (dev)
+  // would otherwise send two verify requests, since `state` isn't in deps.
+  const autoVerifiedToken = useRef<string | null>(null);
   useEffect(() => {
-    if (tokenFromUrl && state === "idle") {
+    if (tokenFromUrl && autoVerifiedToken.current !== tokenFromUrl) {
+      autoVerifiedToken.current = tokenFromUrl;
       verify.mutate(tokenFromUrl);
     }
-    // run once on mount per token
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenFromUrl]);
 
