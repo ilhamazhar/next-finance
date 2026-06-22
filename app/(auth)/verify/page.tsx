@@ -27,7 +27,6 @@ function VerifyView() {
   const autoResend = params.get("resend") === "1";
 
   const [email, setEmail] = useState(emailFromUrl);
-  const [token, setToken] = useState(tokenFromUrl);
   const [state, setState] = useState<VerifyState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -85,13 +84,9 @@ function VerifyView() {
       useBackendStatus.getState().setStatus("up");
       // Privacy: backend returns 200 with a generic message even if email doesn't exist.
       toast.success(res.message ?? "Verification email sent");
-      // Dev mode: token comes back inline — prefill it so the user can verify immediately.
+      // Dev mode: token comes back inline — verify immediately (no manual paste UI).
       const devToken = res.data?.verification_token;
-      if (devToken) {
-        setToken(devToken);
-        setState("idle");
-        setErrorMsg(null);
-      }
+      if (devToken) verify.mutate(devToken);
     },
     onError: (err: unknown) => {
       if (axios.isAxiosError(err) && (err.response?.status === 503 || !err.response)) {
@@ -183,33 +178,8 @@ function VerifyView() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Manual token paste (and primary action after the email link fails) */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (token.trim()) verify.mutate(token.trim());
-          }}
-          className="space-y-3"
-        >
-          <div className="space-y-2">
-            <Label htmlFor="token">Verification token</Label>
-            <Input
-              id="token"
-              placeholder="Paste the token from your email"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-            />
-            <p className="text-xs text-[color:var(--color-muted-foreground)]">
-              The link in your email already includes the token. Pasting here is a fallback.
-            </p>
-          </div>
-          <Button type="submit" className="w-full" disabled={!token.trim() || verify.isPending}>
-            {verify.isPending ? "Verifying…" : "Verify email"}
-          </Button>
-        </form>
-
         {/* Resend verification email */}
-        <div className="border-t border-[color:var(--color-border)] pt-4 space-y-3">
+        <div className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="resend-email">Didn&apos;t get the email?</Label>
             <Input
