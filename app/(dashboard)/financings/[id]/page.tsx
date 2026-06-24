@@ -98,6 +98,7 @@ export default function FinancingDetailPage() {
               </CardTitle>
               <CardDescription>
                 {f.akad_type} · #{f.id}
+                {f.user_name ? ` · ${f.user_name}` : ""}
                 {f.akad_signed_at ? ` · signed ${formatDate(f.akad_signed_at)}` : " · not yet signed"}
               </CardDescription>
             </CardHeader>

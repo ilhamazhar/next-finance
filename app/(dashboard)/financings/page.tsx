@@ -13,12 +13,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinancingStatusBadge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/error-state";
+import { useIsAdmin } from "@/lib/api/rbac";
 import { formatDate, formatIDR } from "@/lib/utils";
 
 export default function FinancingsPage() {
   const router = useRouter();
+  const isAdmin = useIsAdmin();
   const [page, setPage] = useState(1);
   const limit = 10;
+  // The owner column is only meaningful to admins, whose list spans every
+  // user; a regular user's list is entirely their own.
+  const cols = isAdmin ? 7 : 6;
 
   const query = useQuery({
     queryKey: ["financings", page],
@@ -68,6 +73,7 @@ export default function FinancingsPage() {
               <thead>
                 <tr className="border-b border-[color:var(--color-border)]">
                   <th className="text-left py-2 px-2 font-medium">Asset</th>
+                  {isAdmin && <th className="text-left py-2 px-2 font-medium">Owner</th>}
                   <th className="text-left py-2 px-2 font-medium">Akad</th>
                   <th className="text-right py-2 px-2 font-medium">Total</th>
                   <th className="text-right py-2 px-2 font-medium">Tenor</th>
@@ -77,7 +83,7 @@ export default function FinancingsPage() {
               </thead>
               <tbody>
                 {query.isLoading && (
-                  <tr><td colSpan={6} className="py-6 text-center">Loading…</td></tr>
+                  <tr><td colSpan={cols} className="py-6 text-center">Loading…</td></tr>
                 )}
                 {query.data?.data?.map((f) => (
                   <tr
@@ -86,6 +92,11 @@ export default function FinancingsPage() {
                     onClick={() => router.push(`/financings/${f.id}`)}
                   >
                     <td className="py-2 px-2 font-medium">{f.asset_name}</td>
+                    {isAdmin && (
+                      <td className="py-2 px-2 text-[color:var(--color-muted-foreground)]">
+                        {f.user_name ?? "—"}
+                      </td>
+                    )}
                     <td className="py-2 px-2 text-[color:var(--color-muted-foreground)]">{f.akad_type}</td>
                     <td className="py-2 px-2 text-right">{formatIDR(f.total_price)}</td>
                     <td className="py-2 px-2 text-right">{f.tenor} mo</td>
@@ -94,7 +105,7 @@ export default function FinancingsPage() {
                   </tr>
                 ))}
                 {query.data?.data?.length === 0 && (
-                  <tr><td colSpan={6} className="py-6 text-center text-[color:var(--color-muted-foreground)]">No financings yet</td></tr>
+                  <tr><td colSpan={cols} className="py-6 text-center text-[color:var(--color-muted-foreground)]">No financings yet</td></tr>
                 )}
               </tbody>
             </table>

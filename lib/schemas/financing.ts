@@ -49,6 +49,10 @@ export type InstallmentResponse = {
 
 export type FinancingResponse = {
   id: number;
+  user_id: string;
+  // Owner's display name. Preloaded on list + detail endpoints; absent on
+  // create. Mainly useful to admins, whose list spans every user.
+  user_name?: string;
   akad_type: AkadType | string;
   asset_name: string;
   cost_price: number;
