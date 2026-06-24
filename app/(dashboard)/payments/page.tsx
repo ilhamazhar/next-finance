@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/error-state";
+import { useCan, Resource, Action } from "@/lib/api/rbac";
 import { formatDate, formatIDR } from "@/lib/utils";
 
 function PaymentsView() {
@@ -23,6 +24,8 @@ function PaymentsView() {
   const router = useRouter();
   const queryRef = params.get("ref") ?? "";
   const [orderRef, setOrderRef] = useState(queryRef);
+  // Staff can look up payments (read) but not create them.
+  const canCreate = useCan(Resource.Payments, Action.Create);
 
   const status = useQuery({
     queryKey: ["payment-status", queryRef],
@@ -51,7 +54,7 @@ function PaymentsView() {
             Look up an order by reference.
           </p>
         </div>
-        <Link href="/payments/new"><Button>+ New QRIS</Button></Link>
+        {canCreate && <Link href="/payments/new"><Button>+ New QRIS</Button></Link>}
       </header>
 
       <Card>

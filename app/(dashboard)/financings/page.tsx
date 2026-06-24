@@ -13,17 +13,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinancingStatusBadge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/error-state";
-import { useIsAdmin } from "@/lib/api/rbac";
+import { useCanViewAll, useCan, Resource, Action } from "@/lib/api/rbac";
 import { formatDate, formatIDR } from "@/lib/utils";
 
 export default function FinancingsPage() {
   const router = useRouter();
-  const isAdmin = useIsAdmin();
+  // Admin & staff lists span every user, so the owner column is meaningful;
+  // a plain user's list is entirely their own.
+  const showOwner = useCanViewAll();
+  const canCreate = useCan(Resource.Financings, Action.Create);
   const [page, setPage] = useState(1);
   const limit = 10;
-  // The owner column is only meaningful to admins, whose list spans every
-  // user; a regular user's list is entirely their own.
-  const cols = isAdmin ? 7 : 6;
+  const cols = showOwner ? 7 : 6;
 
   const query = useQuery({
     queryKey: ["financings", page],
@@ -47,7 +48,7 @@ export default function FinancingsPage() {
             Murabahah (cost-plus) contracts and their installment schedules.
           </p>
         </div>
-        <Link href="/financings/new"><Button>+ New financing</Button></Link>
+        {canCreate && <Link href="/financings/new"><Button>+ New financing</Button></Link>}
       </header>
 
       <Card>
@@ -73,7 +74,7 @@ export default function FinancingsPage() {
               <thead>
                 <tr className="border-b border-[color:var(--color-border)]">
                   <th className="text-left py-2 px-2 font-medium">Asset</th>
-                  {isAdmin && <th className="text-left py-2 px-2 font-medium">Owner</th>}
+                  {showOwner && <th className="text-left py-2 px-2 font-medium">Owner</th>}
                   <th className="text-left py-2 px-2 font-medium">Akad</th>
                   <th className="text-right py-2 px-2 font-medium">Total</th>
                   <th className="text-right py-2 px-2 font-medium">Tenor</th>
@@ -92,7 +93,7 @@ export default function FinancingsPage() {
                     onClick={() => router.push(`/financings/${f.id}`)}
                   >
                     <td className="py-2 px-2 font-medium">{f.asset_name}</td>
-                    {isAdmin && (
+                    {showOwner && (
                       <td className="py-2 px-2 text-[color:var(--color-muted-foreground)]">
                         {f.user_name ?? "—"}
                       </td>

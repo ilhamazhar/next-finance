@@ -69,9 +69,9 @@ export function Sidebar() {
           <div className="text-xs px-2 text-[color:var(--color-muted-foreground)]">
             <div className="font-medium text-[color:var(--color-foreground)] truncate flex items-center gap-1.5">
               <span className="truncate">{user.name}</span>
-              {role === "admin" && (
+              {role !== "user" && (
                 <span className="shrink-0 rounded bg-[color:var(--color-muted)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">
-                  Admin
+                  {role}
                 </span>
               )}
             </div>

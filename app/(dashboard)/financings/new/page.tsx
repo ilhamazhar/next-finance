@@ -19,9 +19,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RequirePermission } from "@/components/require-permission";
+import { Resource, Action } from "@/lib/api/rbac";
 import { formatIDR } from "@/lib/utils";
 
 export default function NewFinancingPage() {
+  // Creating a financing requires financings/create (admin + user, not staff).
+  return (
+    <RequirePermission resource={Resource.Financings} action={Action.Create} redirectTo="/financings">
+      <NewFinancingForm />
+    </RequirePermission>
+  );
+}
+
+function NewFinancingForm() {
   const router = useRouter();
   const form = useForm<CreateMurabahahInput>({
     resolver: zodResolver(createMurabahahSchema),

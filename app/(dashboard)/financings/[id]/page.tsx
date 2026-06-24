@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinancingStatusBadge, InstallmentStatusBadge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/error-state";
+import { useCan, Resource, Action } from "@/lib/api/rbac";
 import { formatDate, formatIDR } from "@/lib/utils";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -27,6 +28,10 @@ export default function FinancingDetailPage() {
   const id = params.id;
   const router = useRouter();
   const qc = useQueryClient();
+  // Signing the akad and paying installments are contract actions staff can't
+  // perform (financings sign/pay) — staff has read-only oversight.
+  const canSign = useCan(Resource.Financings, Action.Sign);
+  const canPay = useCan(Resource.Financings, Action.Pay);
 
   const query = useQuery({
     queryKey: ["financing", id],
@@ -112,7 +117,7 @@ export default function FinancingDetailPage() {
                 <div className="flex justify-between"><dt className="text-[color:var(--color-muted-foreground)]">Currency</dt><dd>{f.currency}</dd></div>
               </dl>
 
-              {f.status === "DRAFT" && (
+              {f.status === "DRAFT" && canSign && (
                 <div className="flex items-center justify-between rounded-md border border-[color:var(--color-border)] p-3">
                   <p className="text-[color:var(--color-muted-foreground)]">
                     Sign the akad to activate the contract and enable installment payments.
@@ -160,7 +165,7 @@ export default function FinancingDetailPage() {
                         <td className="py-2 px-2 text-right font-medium">{formatIDR(inst.amount)}</td>
                         <td className="py-2 px-2"><InstallmentStatusBadge status={inst.status} /></td>
                         <td className="py-2 px-2 text-right">
-                          {f.status === "ACTIVE" && inst.status !== "PAID" ? (
+                          {f.status === "ACTIVE" && inst.status !== "PAID" && canPay ? (
                             <Button
                               size="sm"
                               variant="outline"

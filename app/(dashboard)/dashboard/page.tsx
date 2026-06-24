@@ -12,7 +12,9 @@ import { LayoutDashboard } from "lucide-react";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const canManageUsers = useCan(Resource.Users, Action.Read);
+  const canViewUsers = useCan(Resource.Users, Action.Read);
+  const canCreateFinancing = useCan(Resource.Financings, Action.Create);
+  const canCreatePayment = useCan(Resource.Payments, Action.Create);
 
   const me = useQuery({
     queryKey: ["me"],
@@ -60,16 +62,17 @@ export default function DashboardPage() {
             <CardTitle>Quick links</CardTitle>
             <CardDescription>Where to next?</CardDescription>
           </CardHeader>
-          <CardContent className="text-sm space-y-1">
-            <a className="underline" href="/payments/new">→ Create a QRIS payment</a><br />
-            <a className="underline" href="/payments">→ View payments by order ref</a><br />
-            <a className="underline" href="/financings/new">→ Open a Murabahah financing</a><br />
+          <CardContent className="text-sm flex flex-col gap-1">
+            {canCreatePayment && (
+              <a className="underline" href="/payments/new">→ Create a QRIS payment</a>
+            )}
+            <a className="underline" href="/payments">→ View payments by order ref</a>
+            {canCreateFinancing && (
+              <a className="underline" href="/financings/new">→ Open a Murabahah financing</a>
+            )}
             <a className="underline" href="/financings">→ View financings &amp; schedules</a>
-            {canManageUsers && (
-              <>
-                <br />
-                <a className="underline" href="/users">→ Manage users</a>
-              </>
+            {canViewUsers && (
+              <a className="underline" href="/users">→ Manage users</a>
             )}
           </CardContent>
         </Card>

@@ -19,7 +19,7 @@ import { Modal } from "@/components/ui/modal";
 import { VerifiedBadge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
 import { RequirePermission } from "@/components/require-permission";
-import { Resource, Action } from "@/lib/api/rbac";
+import { Resource, Action, useCan } from "@/lib/api/rbac";
 import { ErrorState } from "@/components/error-state";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -28,8 +28,8 @@ function apiErrorMessage(err: unknown, fallback: string): string {
 }
 
 export default function UsersPage() {
-  // Backend gates /api/users to admins (Casbin users/read). Guard the page so a
-  // non-admin who reaches the URL is redirected instead of hitting 403s.
+  // Backend gates /api/users to users/read (admin + staff). Guard the page so a
+  // plain user who reaches the URL is redirected instead of hitting 403s.
   return (
     <RequirePermission resource={Resource.Users} action={Action.Read}>
       <UsersPageContent />
@@ -41,6 +41,11 @@ function UsersPageContent() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const limit = 10;
+  // Editing/deleting users is admin-only (users update/delete). Staff sees the
+  // list read-only, so the whole Actions column is hidden for them.
+  const canManage =
+    useCan(Resource.Users, Action.Update) || useCan(Resource.Users, Action.Delete);
+  const cols = canManage ? 6 : 5;
 
   const [editing, setEditing] = useState<User | null>(null);
   const [deleting, setDeleting] = useState<User | null>(null);
@@ -117,12 +122,12 @@ function UsersPageContent() {
                   <th className="text-left py-2 px-2 font-medium">Role</th>
                   <th className="text-left py-2 px-2 font-medium">Status</th>
                   <th className="text-left py-2 px-2 font-medium">Created</th>
-                  <th className="text-right py-2 px-2 font-medium">Actions</th>
+                  {canManage && <th className="text-right py-2 px-2 font-medium">Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {query.isLoading && (
-                  <tr><td colSpan={6} className="py-6 text-center">Loading…</td></tr>
+                  <tr><td colSpan={cols} className="py-6 text-center">Loading…</td></tr>
                 )}
                 {query.data?.data?.map((u) => (
                   <tr key={u.id} className="border-b border-[color:var(--color-border)] last:border-0">
@@ -146,30 +151,32 @@ function UsersPageContent() {
                     <td className="py-2 px-2 text-[color:var(--color-muted-foreground)]">
                       {formatDate(u.created_at)}
                     </td>
-                    <td className="py-2 px-2 text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditing(u)}
-                          aria-label="Edit user"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleting(u)}
-                          aria-label="Delete user"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
+                    {canManage && (
+                      <td className="py-2 px-2 text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditing(u)}
+                            aria-label="Edit user"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleting(u)}
+                            aria-label="Delete user"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
                 {query.data?.data?.length === 0 && (
-                  <tr><td colSpan={6} className="py-6 text-center text-[color:var(--color-muted-foreground)]">No users</td></tr>
+                  <tr><td colSpan={cols} className="py-6 text-center text-[color:var(--color-muted-foreground)]">No users</td></tr>
                 )}
               </tbody>
             </table>

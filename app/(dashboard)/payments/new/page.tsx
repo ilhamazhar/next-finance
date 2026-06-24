@@ -15,8 +15,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RequirePermission } from "@/components/require-permission";
+import { Resource, Action } from "@/lib/api/rbac";
 
 export default function NewPaymentPage() {
+  // Creating a QRIS requires payments/create (admin + user, not staff).
+  return (
+    <RequirePermission resource={Resource.Payments} action={Action.Create} redirectTo="/payments">
+      <NewPaymentForm />
+    </RequirePermission>
+  );
+}
+
+function NewPaymentForm() {
   const router = useRouter();
   const form = useForm<CreateQrisInput>({
     resolver: zodResolver(createQrisSchema),
