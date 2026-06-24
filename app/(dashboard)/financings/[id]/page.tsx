@@ -14,6 +14,7 @@ import type { QrisResponse } from "@/lib/schemas/payment";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinancingStatusBadge, InstallmentStatusBadge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/error-state";
 import { formatDate, formatIDR } from "@/lib/utils";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -79,7 +80,12 @@ export default function FinancingDetailPage() {
 
       {query.isLoading && <p className="text-sm">Loading…</p>}
       {query.isError && (
-        <p className="text-sm text-red-600">Couldn&apos;t load this financing — check the id and that you&apos;re signed in.</p>
+        <ErrorState
+          error={query.error}
+          title="Couldn't load this financing"
+          backHref="/financings"
+          onRetry={() => query.refetch()}
+        />
       )}
 
       {f && (

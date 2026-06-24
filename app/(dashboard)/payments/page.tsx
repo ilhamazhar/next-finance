@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/error-state";
 import { formatDate, formatIDR } from "@/lib/utils";
 
 function PaymentsView() {
@@ -92,9 +93,11 @@ function PaymentsView() {
           <CardContent className="space-y-4 text-sm">
             {status.isLoading && "Loading…"}
             {status.isError && (
-              <p className="text-red-600">
-                Couldn&apos;t load order — check the ref and that you&apos;re signed in.
-              </p>
+              <ErrorState
+                error={status.error}
+                title="Couldn't load this order"
+                onRetry={() => status.refetch()}
+              />
             )}
             {status.data && (
               <>

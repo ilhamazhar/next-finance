@@ -17,7 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { VerifiedBadge } from "@/components/ui/badge";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
+import { RequirePermission } from "@/components/require-permission";
+import { Resource, Action } from "@/lib/api/rbac";
+import { ErrorState } from "@/components/error-state";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
   if (axios.isAxiosError(err)) return err.response?.data?.message ?? fallback;
@@ -25,6 +28,16 @@ function apiErrorMessage(err: unknown, fallback: string): string {
 }
 
 export default function UsersPage() {
+  // Backend gates /api/users to admins (Casbin users/read). Guard the page so a
+  // non-admin who reaches the URL is redirected instead of hitting 403s.
+  return (
+    <RequirePermission resource={Resource.Users} action={Action.Read}>
+      <UsersPageContent />
+    </RequirePermission>
+  );
+}
+
+function UsersPageContent() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const limit = 10;
@@ -87,12 +100,21 @@ export default function UsersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {query.isError ? (
+            <ErrorState
+              error={query.error}
+              title="Failed to load users"
+              onRetry={() => query.refetch()}
+            />
+          ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[color:var(--color-border)]">
                   <th className="text-left py-2 px-2 font-medium">Name</th>
                   <th className="text-left py-2 px-2 font-medium">Email</th>
+                  <th className="text-left py-2 px-2 font-medium">Role</th>
                   <th className="text-left py-2 px-2 font-medium">Status</th>
                   <th className="text-left py-2 px-2 font-medium">Created</th>
                   <th className="text-right py-2 px-2 font-medium">Actions</th>
@@ -100,12 +122,24 @@ export default function UsersPage() {
               </thead>
               <tbody>
                 {query.isLoading && (
-                  <tr><td colSpan={5} className="py-6 text-center">Loading…</td></tr>
+                  <tr><td colSpan={6} className="py-6 text-center">Loading…</td></tr>
                 )}
                 {query.data?.data?.map((u) => (
                   <tr key={u.id} className="border-b border-[color:var(--color-border)] last:border-0">
                     <td className="py-2 px-2">{u.name}</td>
                     <td className="py-2 px-2">{u.email}</td>
+                    <td className="py-2 px-2">
+                      <span
+                        className={cn(
+                          "inline-block rounded px-1.5 py-0.5 text-xs font-medium capitalize",
+                          u.role === "admin"
+                            ? "bg-[color:var(--color-muted)] text-[color:var(--color-foreground)]"
+                            : "text-[color:var(--color-muted-foreground)]"
+                        )}
+                      >
+                        {u.role}
+                      </span>
+                    </td>
                     <td className="py-2 px-2">
                       <VerifiedBadge verifiedAt={u.email_verified_at} />
                     </td>
@@ -135,7 +169,7 @@ export default function UsersPage() {
                   </tr>
                 ))}
                 {query.data?.data?.length === 0 && (
-                  <tr><td colSpan={5} className="py-6 text-center text-[color:var(--color-muted-foreground)]">No users</td></tr>
+                  <tr><td colSpan={6} className="py-6 text-center text-[color:var(--color-muted-foreground)]">No users</td></tr>
                 )}
               </tbody>
             </table>
@@ -158,6 +192,8 @@ export default function UsersPage() {
               Next
             </Button>
           </div>
+          </>
+          )}
         </CardContent>
       </Card>
 

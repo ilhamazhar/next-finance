@@ -7,10 +7,12 @@ import type { User } from "@/lib/schemas/user";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { VerifiedBadge } from "@/components/ui/badge";
 import { useAuthStore } from "@/lib/api/auth-store";
+import { useCan, Resource, Action } from "@/lib/api/rbac";
 import { LayoutDashboard } from "lucide-react";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
+  const canManageUsers = useCan(Resource.Users, Action.Read);
 
   const me = useQuery({
     queryKey: ["me"],
@@ -41,13 +43,13 @@ export default function DashboardPage() {
           <CardContent className="text-sm">
             {me.isLoading ? "Loading…" : me.data ? (
               <dl className="space-y-1">
+                <div className="flex justify-between"><dt className="text-[color:var(--color-muted-foreground)]">ID</dt><dd className="font-mono text-xs">{me.data.id}</dd></div>
                 <div className="flex justify-between"><dt className="text-[color:var(--color-muted-foreground)]">Name</dt><dd>{me.data.name}</dd></div>
                 <div className="flex justify-between"><dt className="text-[color:var(--color-muted-foreground)]">Email</dt><dd>{me.data.email}</dd></div>
                 <div className="flex justify-between items-center">
                   <dt className="text-[color:var(--color-muted-foreground)]">Status</dt>
                   <dd><VerifiedBadge verifiedAt={me.data.email_verified_at} /></dd>
                 </div>
-                <div className="flex justify-between"><dt className="text-[color:var(--color-muted-foreground)]">ID</dt><dd className="font-mono text-xs">{me.data.id}</dd></div>
               </dl>
             ) : "No data"}
           </CardContent>
@@ -62,8 +64,13 @@ export default function DashboardPage() {
             <a className="underline" href="/payments/new">→ Create a QRIS payment</a><br />
             <a className="underline" href="/payments">→ View payments by order ref</a><br />
             <a className="underline" href="/financings/new">→ Open a Murabahah financing</a><br />
-            <a className="underline" href="/financings">→ View financings &amp; schedules</a><br />
-            <a className="underline" href="/users">→ Manage users</a>
+            <a className="underline" href="/financings">→ View financings &amp; schedules</a>
+            {canManageUsers && (
+              <>
+                <br />
+                <a className="underline" href="/users">→ Manage users</a>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

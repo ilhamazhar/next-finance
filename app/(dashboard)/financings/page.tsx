@@ -12,6 +12,7 @@ import type { FinancingResponse } from "@/lib/schemas/financing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinancingStatusBadge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/error-state";
 import { formatDate, formatIDR } from "@/lib/utils";
 
 export default function FinancingsPage() {
@@ -54,6 +55,14 @@ export default function FinancingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {query.isError ? (
+            <ErrorState
+              error={query.error}
+              title="Failed to load financings"
+              onRetry={() => query.refetch()}
+            />
+          ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -69,9 +78,6 @@ export default function FinancingsPage() {
               <tbody>
                 {query.isLoading && (
                   <tr><td colSpan={6} className="py-6 text-center">Loading…</td></tr>
-                )}
-                {query.isError && (
-                  <tr><td colSpan={6} className="py-6 text-center text-red-600">Failed to load financings.</td></tr>
                 )}
                 {query.data?.data?.map((f) => (
                   <tr
@@ -111,6 +117,8 @@ export default function FinancingsPage() {
               Next
             </Button>
           </div>
+          </>
+          )}
         </CardContent>
       </Card>
     </div>

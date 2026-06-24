@@ -1,3 +1,8 @@
+// Authorization role. Mirrors backend domain.Role (pkg/authz + domain/user.go):
+// "admin" inherits every "user" permission. Keep this union in sync with the
+// backend's role constants.
+export type Role = "admin" | "user";
+
 export type ApiEnvelope<T> = {
   success: boolean;
   message?: string;
@@ -28,6 +33,7 @@ export type TokenPair = {
     id: string;
     name: string;
     email: string;
+    role: Role;
     email_verified_at?: string | null;
     created_at: string;
     updated_at: string;
