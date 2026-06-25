@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
@@ -9,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/api/auth-store";
 import { can, useRole, Resource, Action, type Resource as Res, type Action as Act } from "@/lib/api/rbac";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 
 // `require` gates a link behind a permission; links without it are shown to any
 // authenticated role. Mirrors the backend's route authz (only /users is gated).
@@ -31,8 +33,11 @@ export function Sidebar() {
   const clear = useAuthStore((s) => s.clearSession);
   const role = useRole();
   const visibleLinks = links.filter((l) => !l.require || can(role, l.require.resource, l.require.action));
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   async function logout() {
+    setLoggingOut(true);
     try {
       await axios.post("/api/auth/logout", {}, { withCredentials: true });
     } finally {
@@ -78,10 +83,30 @@ export function Sidebar() {
             <div className="truncate">{user.email}</div>
           </div>
         )}
-        <Button variant="outline" size="sm" className="w-full" onClick={logout}>
+        <Button variant="outline" size="sm" className="w-full" onClick={() => setConfirmLogout(true)}>
           <LogOut className="h-4 w-4" /> Logout
         </Button>
       </div>
+
+      <Modal
+        open={confirmLogout}
+        onClose={() => !loggingOut && setConfirmLogout(false)}
+        title="Log out"
+        description="You'll need to sign in again to access your account."
+      >
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setConfirmLogout(false)}
+            disabled={loggingOut}
+          >
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={logout} disabled={loggingOut}>
+            {loggingOut ? "Logging out…" : "Log out"}
+          </Button>
+        </div>
+      </Modal>
     </aside>
   );
 }
