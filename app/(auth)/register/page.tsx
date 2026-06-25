@@ -13,6 +13,7 @@ import type { ApiEnvelope } from "@/lib/api/types";
 import { useBackendStatus } from "@/lib/api/backend-status-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -77,14 +78,14 @@ export default function RegisterPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" {...form.register("password")} />
+            <PasswordInput id="password" {...form.register("password")} />
             {form.formState.errors.password && (
               <p className="text-xs text-red-600">{form.formState.errors.password.message}</p>
             )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password_confirm">Confirm password</Label>
-            <Input id="password_confirm" type="password" {...form.register("password_confirm")} />
+            <PasswordInput id="password_confirm" {...form.register("password_confirm")} />
             {form.formState.errors.password_confirm && (
               <p className="text-xs text-red-600">{form.formState.errors.password_confirm.message}</p>
             )}

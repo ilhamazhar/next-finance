@@ -14,7 +14,7 @@ import { resetPasswordSchema, type ResetPasswordInput } from "@/lib/schemas/auth
 import type { ApiEnvelope } from "@/lib/api/types";
 import { useBackendStatus } from "@/lib/api/backend-status-store";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -94,9 +94,8 @@ function ResetPasswordView() {
           )}
           <div className="space-y-2">
             <Label htmlFor="new_password">New password</Label>
-            <Input
+            <PasswordInput
               id="new_password"
-              type="password"
               autoComplete="new-password"
               {...form.register("new_password")}
             />
@@ -106,9 +105,8 @@ function ResetPasswordView() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm_password">Confirm new password</Label>
-            <Input
+            <PasswordInput
               id="confirm_password"
-              type="password"
               autoComplete="new-password"
               {...form.register("confirm_password")}
             />
