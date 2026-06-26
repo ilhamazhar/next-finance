@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { VerifiedBadge } from "@/components/ui/badge";
+import { SortableHeader, type SortOrder } from "@/components/ui/sortable-header";
 import { cn, formatDate } from "@/lib/utils";
 import { RequirePermission } from "@/components/require-permission";
 import { Resource, Action, useCan } from "@/lib/api/rbac";
@@ -26,6 +28,10 @@ function apiErrorMessage(err: unknown, fallback: string): string {
   if (axios.isAxiosError(err)) return err.response?.data?.message ?? fallback;
   return fallback;
 }
+
+// Sort keys the backend accepts (see userSortColumns in the Go repo). "status"
+// maps to email_verified_at server-side.
+type SortKey = "name" | "email" | "role" | "status" | "created_at";
 
 export default function UsersPage() {
   // Backend gates /api/users to users/read (admin + staff). Guard the page so a
@@ -41,6 +47,18 @@ function UsersPageContent() {
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const limit = 10;
+
+  // Debounce the search box so we don't fire a request per keystroke; the
+  // backend filters name/email across all users (not just the visible page).
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1); // a new search starts from the first page
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [search]);
   // Editing/deleting users is admin-only (users update/delete). Staff sees the
   // list read-only, so the whole Actions column is hidden for them.
   const canManage =
@@ -50,10 +68,32 @@ function UsersPageContent() {
   const [editing, setEditing] = useState<User | null>(null);
   const [deleting, setDeleting] = useState<User | null>(null);
 
+  // Column sorting. Newest-first by default, matching the backend fallback.
+  const [sort, setSort] = useState<SortKey>("created_at");
+  const [order, setOrder] = useState<SortOrder>("desc");
+  // Click a header: toggle direction if it's the active column, else switch to
+  // it. Text columns read most naturally ascending; created_at newest-first.
+  const toggleSort = (key: SortKey) => {
+    if (sort === key) {
+      setOrder((o) => (o === "asc" ? "desc" : "asc"));
+    } else {
+      setSort(key);
+      setOrder(key === "created_at" ? "desc" : "asc");
+    }
+    setPage(1);
+  };
+
   const query = useQuery({
-    queryKey: ["users", page],
+    queryKey: ["users", page, debouncedSearch, sort, order],
     queryFn: async () => {
-      const res = await api.get<PaginatedEnvelope<User>>(`/api/users?page=${page}&limit=${limit}`);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+        sort,
+        order,
+      });
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      const res = await api.get<PaginatedEnvelope<User>>(`/api/users?${params.toString()}`);
       return res.data;
     },
   });
@@ -113,15 +153,26 @@ function UsersPageContent() {
             />
           ) : (
           <>
+          <div className="relative mb-4 max-w-sm">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-muted-foreground)]" />
+            <Input
+              type="search"
+              placeholder="Search by name or email…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8"
+              aria-label="Search users"
+            />
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[color:var(--color-border)]">
-                  <th className="text-left py-2 px-2 font-medium">Name</th>
-                  <th className="text-left py-2 px-2 font-medium">Email</th>
-                  <th className="text-left py-2 px-2 font-medium">Role</th>
-                  <th className="text-left py-2 px-2 font-medium">Status</th>
-                  <th className="text-left py-2 px-2 font-medium">Created</th>
+                  <SortableHeader label="Name" sortKey="name" sort={sort} order={order} onSort={toggleSort} />
+                  <SortableHeader label="Email" sortKey="email" sort={sort} order={order} onSort={toggleSort} />
+                  <SortableHeader label="Role" sortKey="role" sort={sort} order={order} onSort={toggleSort} />
+                  <SortableHeader label="Status" sortKey="status" sort={sort} order={order} onSort={toggleSort} />
+                  <SortableHeader label="Created" sortKey="created_at" sort={sort} order={order} onSort={toggleSort} />
                   {canManage && <th className="text-right py-2 px-2 font-medium">Actions</th>}
                 </tr>
               </thead>
@@ -176,7 +227,9 @@ function UsersPageContent() {
                   </tr>
                 ))}
                 {query.data?.data?.length === 0 && (
-                  <tr><td colSpan={cols} className="py-6 text-center text-[color:var(--color-muted-foreground)]">No users</td></tr>
+                  <tr><td colSpan={cols} className="py-6 text-center text-[color:var(--color-muted-foreground)]">
+                    {debouncedSearch ? `No users match “${debouncedSearch}”` : "No users"}
+                  </td></tr>
                 )}
               </tbody>
             </table>
