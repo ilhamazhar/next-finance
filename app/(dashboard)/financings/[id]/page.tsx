@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,10 +13,12 @@ import type { ApiEnvelope } from "@/lib/api/types";
 import type { FinancingResponse } from "@/lib/schemas/financing";
 import type { QrisResponse } from "@/lib/schemas/payment";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinancingStatusBadge, InstallmentStatusBadge } from "@/components/ui/badge";
 import { ErrorState } from "@/components/error-state";
 import { useCan, Resource, Action } from "@/lib/api/rbac";
+import { useAuthStore } from "@/lib/api/auth-store";
 import { formatDate, formatIDR } from "@/lib/utils";
 
 function apiErrorMessage(err: unknown, fallback: string): string {
@@ -32,6 +35,8 @@ export default function FinancingDetailPage() {
   // perform (financings sign/pay) — staff has read-only oversight.
   const canSign = useCan(Resource.Financings, Action.Sign);
   const canPay = useCan(Resource.Financings, Action.Pay);
+  const currentUserId = useAuthStore((s) => s.user?.id);
+  const [confirmSign, setConfirmSign] = useState(false);
 
   const query = useQuery({
     queryKey: ["financing", id],
@@ -49,6 +54,7 @@ export default function FinancingDetailPage() {
     },
     onSuccess: () => {
       toast.success("Akad signed — financing is now active");
+      setConfirmSign(false);
       qc.invalidateQueries({ queryKey: ["financing", id] });
       qc.invalidateQueries({ queryKey: ["financings"] });
     },
@@ -117,12 +123,12 @@ export default function FinancingDetailPage() {
                 <div className="flex justify-between"><dt className="text-[color:var(--color-muted-foreground)]">Currency</dt><dd>{f.currency}</dd></div>
               </dl>
 
-              {f.status === "DRAFT" && canSign && (
+              {f.status === "DRAFT" && canSign && f.user_id === currentUserId && (
                 <div className="flex items-center justify-between rounded-md border border-[color:var(--color-border)] p-3">
                   <p className="text-[color:var(--color-muted-foreground)]">
                     Sign the akad to activate the contract and enable installment payments.
                   </p>
-                  <Button onClick={() => sign.mutate()} disabled={sign.isPending}>
+                  <Button onClick={() => setConfirmSign(true)} disabled={sign.isPending}>
                     {sign.isPending ? "Signing…" : "Sign akad"}
                   </Button>
                 </div>
@@ -192,6 +198,26 @@ export default function FinancingDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Modal
+            open={confirmSign}
+            onClose={() => !sign.isPending && setConfirmSign(false)}
+            title="Sign akad"
+            description={`Signing activates the contract for ${f.asset_name} (${formatIDR(f.total_price)}) and generates the installment schedule. This can't be undone.`}
+          >
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmSign(false)}
+                disabled={sign.isPending}
+              >
+                Cancel
+              </Button>
+              <Button onClick={() => sign.mutate()} disabled={sign.isPending}>
+                {sign.isPending ? "Signing…" : "Sign akad"}
+              </Button>
+            </div>
+          </Modal>
         </>
       )}
     </div>
