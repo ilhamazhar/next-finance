@@ -19,7 +19,7 @@ import { useCanViewAll, useCan, Resource, Action } from "@/lib/api/rbac";
 import { formatDate, formatIDR } from "@/lib/utils";
 
 // Sort keys the backend accepts (see financingSortColumns in the Go repo).
-type SortKey = "asset_name" | "akad_type" | "total" | "tenor" | "status" | "created_at";
+type SortKey = "asset_name" | "akad_type" | "total" | "tenor" | "status" | "created_at" | "owner";
 
 export default function FinancingsPage() {
   const router = useRouter();
@@ -53,7 +53,11 @@ export default function FinancingsPage() {
       setOrder((o) => (o === "asc" ? "desc" : "asc"));
     } else {
       setSort(key);
-      setOrder(key === "asset_name" || key === "akad_type" || key === "status" ? "asc" : "desc");
+      setOrder(
+        key === "asset_name" || key === "akad_type" || key === "status" || key === "owner"
+          ? "asc"
+          : "desc"
+      );
     }
     setPage(1);
   };
@@ -112,7 +116,7 @@ export default function FinancingsPage() {
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-muted-foreground)]" />
             <Input
               type="search"
-              placeholder="Search by asset name…"
+              placeholder="Search by asset or owner…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8"
@@ -124,7 +128,7 @@ export default function FinancingsPage() {
               <thead>
                 <tr className="border-b border-[color:var(--color-border)]">
                   <SortableHeader label="Asset" sortKey="asset_name" sort={sort} order={order} onSort={toggleSort} />
-                  {showOwner && <th className="text-left py-2 px-2 font-medium">Owner</th>}
+                  {showOwner && <SortableHeader label="Owner" sortKey="owner" sort={sort} order={order} onSort={toggleSort} />}
                   <SortableHeader label="Akad" sortKey="akad_type" sort={sort} order={order} onSort={toggleSort} />
                   <SortableHeader label="Total" sortKey="total" sort={sort} order={order} onSort={toggleSort} align="right" />
                   <SortableHeader label="Tenor" sortKey="tenor" sort={sort} order={order} onSort={toggleSort} align="right" />
