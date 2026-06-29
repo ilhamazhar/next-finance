@@ -29,6 +29,7 @@ export const Action = {
   Delete: "delete",
   Sign: "sign",
   Pay: "pay",
+  Approve: "approve",
 } as const;
 export type Action = (typeof Action)[keyof typeof Action];
 
@@ -36,8 +37,10 @@ type Policy = readonly [Resource, Action | "*"];
 
 // Per-role permission matrix, mirroring the backend's defaultPolicies.
 //   - user:  self-service + financing/payment actions on their OWN records
-//   - staff: read-only oversight across ALL users (no master-data/contract writes)
-//   - admin: full user administration; inherits "user" via `inherits` below
+//            (applies for financings; does NOT set margin or approve)
+//   - staff: read-only oversight across ALL users + underwriting (approve)
+//   - admin: full user administration; inherits "user" via `inherits` below,
+//            plus approve (granted explicitly — admin inherits user, not staff)
 // "*" mirrors the backend's ActionAny wildcard.
 const policies: Record<Role, readonly Policy[]> = {
   user: [
@@ -55,10 +58,12 @@ const policies: Record<Role, readonly Policy[]> = {
     [Resource.Profile, Action.Update],
     [Resource.Users, Action.Read],
     [Resource.Financings, Action.Read],
+    [Resource.Financings, Action.Approve],
     [Resource.Payments, Action.Read],
   ],
   admin: [
     [Resource.Users, "*"],
+    [Resource.Financings, Action.Approve],
   ],
 };
 

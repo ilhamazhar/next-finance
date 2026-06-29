@@ -24,8 +24,10 @@ export function FinancingStatusBadge({ status }: { status: string }) {
       ? "bg-blue-100 text-blue-800"
       : status === "SETTLED"
       ? "bg-green-100 text-green-800"
-      : status === "DRAFT"
-      ? "bg-zinc-200 text-zinc-700"
+      : status === "APPLIED"
+      ? "bg-amber-100 text-amber-800"
+      : status === "APPROVED"
+      ? "bg-indigo-100 text-indigo-800"
       : "bg-red-100 text-red-800"; // WRITTEN_OFF / unknown
 
   return (
