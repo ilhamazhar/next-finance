@@ -203,7 +203,7 @@ function UsersPageContent() {
                       {formatDate(u.created_at)}
                     </td>
                     {canManage && (
-                      <td className="py-2 px-2 text-right">
+                      <td className="py-1 px-1 text-right">
                         <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
@@ -211,7 +211,7 @@ function UsersPageContent() {
                             onClick={() => setEditing(u)}
                             aria-label="Edit user"
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3 w-3" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -219,7 +219,7 @@ function UsersPageContent() {
                             onClick={() => setDeleting(u)}
                             aria-label="Delete user"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </td>
